@@ -7,10 +7,12 @@ library(markdown)
 library(DBI)
 library(dbplyr)
 library(RSQLite)
+library(shinyjs)
 
 
 # Define UI
 ui <- fluidPage(
+  useShinyjs(),
   tags$head(
     # Favicon
     tags$link(rel = "icon", href = "img/favicon.ico"),
@@ -24,7 +26,14 @@ ui <- fluidPage(
     tags$link(rel = "stylesheet", href = "https://cdn.jsdelivr.net/npm/bootstrap-icons@1.4.1/font/bootstrap-icons.css"),
     
     # Libraries Stylesheets
-    tags$link(rel = "stylesheet", href = "lib/owlcarousel/assets/owl.carousel.min.css"),
+    tags$link(
+      rel = "stylesheet",
+      href = "https://cdnjs.cloudflare.com/ajax/libs/OwlCarousel2/2.3.4/assets/owl.carousel.min.css"
+    ),
+    tags$link(
+      rel = "stylesheet",
+      href = "https://cdnjs.cloudflare.com/ajax/libs/OwlCarousel2/2.3.4/assets/owl.theme.default.min.css"
+    ),
     tags$link(rel = "stylesheet", href = "lib/tempusdominus/css/tempusdominus-bootstrap-4.min.css"),
     
     # Customized Bootstrap and Template Stylesheets
@@ -32,21 +41,21 @@ ui <- fluidPage(
     tags$link(rel = "stylesheet", href = "css/style.css"),
     
     # jQuery
-    tags$script(src = "https://code.jquery.com/jquery-3.4.1.min.js"),
+    tags$script(src = "https://cdnjs.cloudflare.com/ajax/libs/OwlCarousel2/2.3.4/owl.carousel.min.js"),
+    
     # Bootstrap
     tags$script(src = "https://cdn.jsdelivr.net/npm/bootstrap@5.0.0/dist/js/bootstrap.bundle.min.js"),
     # Easing
     tags$script(src = "lib/easing/easing.min.js"),
     # Waypoints
     tags$script(src = "lib/waypoints/waypoints.min.js"),
-    # Owl Carousel
-    tags$script(src = "lib/owlcarousel/owl.carousel.min.js"),
     # Tempus Dominus (date-picker)
     tags$script(src = "lib/tempusdominus/js/moment.min.js"),
     tags$script(src = "lib/tempusdominus/js/moment-timezone.min.js"),
     tags$script(src = "lib/tempusdominus/js/tempusdominus-bootstrap-4.min.js"),
     # Template JavaScript principal
     tags$script(src = "js/main.js"),
+    
     
     tags$style(HTML("
       .hero-header {
@@ -600,9 +609,10 @@ server <- function(input, output, session) {
                      tags$div(
                        class = "bg-white text-center rounded p-5",
                        tags$h1(
-                         class = "mb-4",
-                         "Book An Appointment"
+                         class = "mb-2",
+                         "Enregistrer les informations par rapport à un médicament"
                        ),
+                       tags$h4(class = "mb-4", "Soumettez le formulaire autant de fois que vous prenez d'antiépileptiques différents."),
                        tags$form(
                          tags$div(
                            class = "row g-3",
@@ -632,7 +642,7 @@ server <- function(input, output, session) {
                            ),
                            # Champs pour les doses (matin, midi, soir) alignés sur une ligne
                            tags$div(
-                             class = "row",  # Ligne pour aligner les champs
+                             class = "row g-3",  # Ligne pour aligner les champs
                              # Dose du matin
                              tags$div(
                                class = "col-4",  # Chaque champ occupe un tiers de la ligne
@@ -640,7 +650,7 @@ server <- function(input, output, session) {
                                tags$select(
                                  class = "form-select bg-light border-0",
                                  style = "height: 55px;",
-                                 tags$option("Choisissez le nombre", selected = TRUE),
+                                 tags$option("Dose du matin", selected = TRUE),
                                  lapply(seq(0.5, 3, by = 0.5), function(x) {
                                    tags$option(x, value = x)
                                  })
@@ -653,7 +663,7 @@ server <- function(input, output, session) {
                                tags$select(
                                  class = "form-select bg-light border-0",
                                  style = "height: 55px;",
-                                 tags$option("Choisissez le nombre", selected = TRUE),
+                                 tags$option("Dose de midi", selected = TRUE),
                                  lapply(seq(0.5, 3, by = 0.5), function(x) {
                                    tags$option(x, value = x)
                                  })
@@ -666,7 +676,7 @@ server <- function(input, output, session) {
                                tags$select(
                                  class = "form-select bg-light border-0",
                                  style = "height: 55px;",
-                                 tags$option("Choisissez le nombre", selected = TRUE),
+                                 tags$option("Dose du soir", selected = TRUE),
                                  lapply(seq(0.5, 3, by = 0.5), function(x) {
                                    tags$option(x, value = x)
                                  })
@@ -675,52 +685,135 @@ server <- function(input, output, session) {
                            ),
                            # Champ pour le prix du médicament
                            tags$div(
-                             class = "row mt-4",  # Nouvelle ligne avec marge en haut
+                             class = "row mt-2 g-3",  # Nouvelle ligne avec marge en haut
                              tags$div(
                                class = "col-12",  # Largeur complète
                                tags$label("Prix approximatif du médicament :", class = "form-label"),
                                tags$input(
                                  type = "number", 
                                  class = "form-control bg-light border-0",
-                                 placeholder = "Entrez le prix en CFA",
+                                 placeholder = "Entrez le Prix exact ou approximatif du médicament choisi",
                                  style = "height: 55px;"
                                )
                              )
                            ),
                            tags$div(
-                             class = "col-12 col-sm-6",
-                             tags$input(
-                               type = "text",
-                               class = "form-control bg-light border-0",
-                               placeholder = "Your Name",
-                               style = "height: 55px;"
+                             class = "row mt-2 g-3",  # Ligne avec marge en haut
+                             # Disponibilité du médicament au Benin
+                             tags$div(
+                               class = "col-6",  # La colonne occupe la moitié de la ligne
+                               tags$label("Disponibilité du médicament dans le pays de résidence :", class = "form-label"),
+                               tags$select(
+                                 class = "form-select bg-light border-0",
+                                 style = "height: 55px;",
+                                 tags$option("Le médicament est-il disponible dans le pays de résidence ?", selected = TRUE),
+                                 tags$option("Oui", value = "Oui"),
+                                 tags$option("Non", value = "Non")
+                               )
+                             ),
+                             # Disponibilité du médicament au Benin
+                             tags$div(
+                               class = "col-6",  # La colonne occupe la moitié de la ligne
+                               tags$label("Rupture de stock dans le pays de résidence :", class = "form-label"),
+                               tags$select(
+                                 class = "form-select bg-light border-0",
+                                 style = "height: 55px;",
+                                 tags$option("Le médicament est-il sujet à des ruptures de stock ?", selected = TRUE),
+                                 tags$option("Oui", value = "Oui"),
+                                 tags$option("Non", value = "Non")
+                               )
                              )
                            ),
                            tags$div(
-                             class = "col-12 col-sm-6",
-                             tags$input(
-                               type = "email",
-                               class = "form-control bg-light border-0",
-                               placeholder = "Your Email",
-                               style = "height: 55px;"
+                             class = "row mt-2 g-3",  # Ligne avec marge en haut
+                               # Disponibilité du médicament dans la zone de résidence
+                               tags$div(
+                                 class = "col-6",  # La colonne occupe la moitié de la ligne
+                                 tags$label("Disponibilité du médicament dans la zone de résidence :", class = "form-label"),
+                                 tags$select(
+                                   class = "form-select bg-light border-0",
+                                   style = "height: 55px;",
+                                   tags$option("Le médicament est-il disponible dans la zone de résidence", selected = TRUE),
+                                   tags$option("Oui", value = "Oui"),
+                                   tags$option("Non", value = "Non")
+                                 )
+                               ),
+                               # Lieu de disponibilité
+                               tags$div(
+                                 class = "col-6",  # La colonne occupe l'autre moitié de la ligne
+                                 tags$label("Lieu de disponibilité :", class = "form-label"),
+                                 tags$input(
+                                   type = "text", 
+                                   class = "form-control bg-light border-0",
+                                   placeholder = "Entrez le lieu de disponibilité du médicament",
+                                   style = "height: 55px;"
+                                 )
+                               )
+                             ),
+                           tags$div(
+                             class = "row mt-2 g-3",  # Ligne avec marge en haut
+                             # Échéance de rupture connue
+                             tags$div(
+                               class = "col-6",  # La colonne occupe la moitié de la ligne
+                               tags$label("L'échéance de rupture est-elle connue ?", class = "form-label"),
+                               tags$select(
+                                 class = "form-select bg-light border-0",
+                                 style = "height: 55px;",
+                                 tags$option("La durée de rupture est-elle connue ?", selected = TRUE),
+                                 tags$option("Oui", value = "Oui"),
+                                 tags$option("Non", value = "Non")
+                               )
+                             ),
+                             # Médicaments alternatifs
+                             tags$div(
+                               class = "col-6",  # La colonne occupe l'autre moitié de la ligne
+                               tags$label("Y a-t-il des médicaments alternatifs ?", class = "form-label"),
+                               tags$select(
+                                 class = "form-select bg-light border-0",
+                                 style = "height: 55px;",
+                                 tags$option("Y a-t-il des médicaments alternatifs ?", selected = TRUE),
+                                 tags$option("Oui", value = "Oui"),
+                                 tags$option("Non", value = "Non")
+                               )
                              )
                            ),
                            tags$div(
-                             class = "col-12 col-sm-6",
-                             tags$input(
-                               type = "text",
-                               class = "form-control bg-light border-0",
-                               placeholder = "Date",
-                               style = "height: 55px;"
+                             class = "row mt-2 g-3",  # Ligne avec marge en haut
+                             tags$div(
+                               class = "col-12",  # La colonne occupe toute la largeur de la ligne
+                               tags$label("Quelles sont les conséquences de l'indisponibilité ou de la rupture de stock ?", class = "form-label"),
+                               tags$textarea(
+                                 class = "form-control bg-light border-0",
+                                 placeholder = "Décrivez les conséquences ici...",
+                                 style = "height: 100px;"  # Plus de hauteur pour la zone de texte
+                               )
                              )
                            ),
+                           
                            tags$div(
-                             class = "col-12 col-sm-6",
-                             tags$input(
-                               type = "text",
-                               class = "form-control bg-light border-0",
-                               placeholder = "Time",
-                               style = "height: 55px;"
+                             class = "row mt-2 g-3",  # Ligne avec marge en haut
+                             tags$div(
+                               class = "col-12",  # Colonne occupant toute la ligne
+                               tags$label("Rencontrez-vous des difficultés à acheter le médicament ?", class = "form-label"),
+                               tags$select(
+                                 class = "form-select bg-light border-0",
+                                 style = "height: 55px;",
+                                 tags$option("Rencontrez-vous des difficultés à acheter le médicament ?", selected = TRUE),
+                                 tags$option("Oui", value = "Oui"),
+                                 tags$option("Non", value = "Non"),
+                               )
+                             )
+                           ),
+                           
+                           tags$div(
+                             class = "row mt-2",  # Ligne avec marge en haut
+                             tags$div(
+                               class = "col-12",  # Colonne occupant toute la ligne
+                               tags$p(
+                                 class = "form-text",
+                                 "En soumettant ce formulaire, vous acceptez de fournir vos informations volontairement et sans contrainte. 
+       Vous nous autorisez à les utiliser en toute confidentialité conformément à notre politique de confidentialité."
+                               )
                              )
                            ),
                            tags$div(
@@ -728,7 +821,7 @@ server <- function(input, output, session) {
                              tags$button(
                                type = "submit",
                                class = "btn btn-primary w-100 py-3",
-                               "Make An Appointment"
+                               "SOUMETTRE VOS INFORMATIONS"
                              )
                            )
                          )
@@ -738,6 +831,219 @@ server <- function(input, output, session) {
                  )
                )
              ),
+             
+  
+               tags$div(
+                 class = "container-fluid py-5",
+                 tags$div(
+                   class = "container",
+                   tags$div(
+                     class = "text-center mx-auto mb-5",
+                     style = "max-width: 500px;",
+                     tags$h5(
+                       class = "d-inline-block text-primary text-uppercase border-bottom border-5",
+                       "Medical Packages"
+                     ),
+                     tags$h1(class = "display-4", "Awesome Medical Programs")
+                   ),
+                   tags$div(
+                     class = "row position-relative",
+                     
+                     
+                     # Package 1
+                     tags$div(
+                       class = " col-md-4 col-sm-12 bg-light rounded text-center",
+                       tags$div(
+                         class = "position-relative",
+                         tags$img(
+                           class = "img-fluid rounded-top",
+                           src = "img/price-1.jpg",
+                           alt = ""
+                         ),
+                         tags$div(
+                           class = "position-absolute w-100 h-100 top-50 start-50 translate-middle rounded-top d-flex flex-column align-items-center justify-content-center",
+                           style = "background: rgba(29, 42, 77, .8);",
+                           tags$h3(class = "text-white", "Pregnancy Care"),
+                           tags$h1(
+                             class = "display-4 text-white mb-0",
+                             tags$small(class = "align-top fw-normal", style = "font-size: 22px; line-height: 45px;", "$"),
+                             "49",
+                             tags$small(class = "align-bottom fw-normal", style = "font-size: 16px; line-height: 40px;", "/ Year")
+                           )
+                         )
+                       ),
+                       tags$div(
+                         class = "text-center py-5",
+                         tags$p("Emergency Medical Treatment"),
+                         tags$p("Highly Experienced Doctors"),
+                         tags$p("Highest Success Rate"),
+                         tags$p("Telephone Service"),
+                         tags$a(
+                           href = "",
+                           class = "btn btn-primary rounded-pill py-3 px-5 my-2",
+                           "Apply Now"
+                         )
+                       )
+                     ),
+                     
+                     # Package 2
+                     tags$div(
+                       class = "col-md-4 col-sm-12 bg-light rounded text-center",
+                       tags$div(
+                         class = "position-relative",
+                         tags$img(
+                           class = "img-fluid rounded-top",
+                           src = "img/price-2.jpg",
+                           alt = ""
+                         ),
+                         tags$div(
+                           class = "position-absolute w-100 h-100 top-50 start-50 translate-middle rounded-top d-flex flex-column align-items-center justify-content-center",
+                           style = "background: rgba(29, 42, 77, .8);",
+                           tags$h3(class = "text-white", "Health Checkup"),
+                           tags$h1(
+                             class = "display-4 text-white mb-0",
+                             tags$small(class = "align-top fw-normal", style = "font-size: 22px; line-height: 45px;", "$"),
+                             "99",
+                             tags$small(class = "align-bottom fw-normal", style = "font-size: 16px; line-height: 40px;", "/ Year")
+                           )
+                         )
+                       ),
+                       tags$div(
+                         class = "text-center py-5",
+                         tags$p("Emergency Medical Treatment"),
+                         tags$p("Highly Experienced Doctors"),
+                         tags$p("Highest Success Rate"),
+                         tags$p("Telephone Service"),
+                         tags$a(
+                           href = "",
+                           class = "btn btn-primary rounded-pill py-3 px-5 my-2",
+                           "Apply Now"
+                         )
+                       )
+                     ),
+                     
+                     # Package 3
+                     tags$div(
+                       class = "col-md-4 col-sm-12 bg-light rounded text-center",
+                       tags$div(
+                         class = "position-relative",
+                         tags$img(
+                           class = "img-fluid rounded-top",
+                           src = "img/price-3.jpg",
+                           alt = ""
+                         ),
+                         tags$div(
+                           class = "position-absolute w-100 h-100 top-50 start-50 translate-middle rounded-top d-flex flex-column align-items-center justify-content-center",
+                           style = "background: rgba(29, 42, 77, .8);",
+                           tags$h3(class = "text-white", "Dental Care"),
+                           tags$h1(
+                             class = "display-4 text-white mb-0",
+                             tags$small(class = "align-top fw-normal", style = "font-size: 22px; line-height: 45px;", "$"),
+                             "149",
+                             tags$small(class = "align-bottom fw-normal", style = "font-size: 16px; line-height: 40px;", "/ Year")
+                           )
+                         )
+                       ),
+                       tags$div(
+                         class = "text-center py-5",
+                         tags$p("Emergency Medical Treatment"),
+                         tags$p("Highly Experienced Doctors"),
+                         tags$p("Highest Success Rate"),
+                         tags$p("Telephone Service"),
+                         tags$a(
+                           href = "",
+                           class = "btn btn-primary rounded-pill py-3 px-5 my-2",
+                           "Apply Now"
+                         )
+                       )
+                     )
+                   )
+                 )
+               ),
+             
+               # Team Section Start
+               tags$div(
+                 class = "container-fluid py-5",
+                 tags$div(
+                   class = "container",
+                   
+                   # Header
+                   tags$div(
+                     class = "text-center mx-auto mb-5",
+                     style = "max-width: 500px;",
+                     tags$h5(
+                       class = "d-inline-block text-primary text-uppercase border-bottom border-5",
+                       "Our Doctors"
+                     ),
+                     tags$h1(
+                       class = "display-4",
+                       "Qualified Healthcare Professionals"
+                     )
+                   ),
+                   
+                   # Team Carousel
+                   tags$div(
+                     class = "owl-carousel team-carousel position-relative",
+                     
+                     # Team Member 1
+                     tags$div(
+                       class = "team-item",
+                       tags$div(
+                         class = "row g-0 bg-light rounded overflow-hidden",
+                         
+                         # Image
+                         tags$div(
+                           class = "col-12 col-sm-5 h-100",
+                           tags$img(
+                             class = "img-fluid h-100",
+                             src = "img/team-1.jpg",
+                             style = "object-fit: cover;"
+                           )
+                         ),
+                         
+                         # Info
+                         tags$div(
+                           class = "col-12 col-sm-7 h-100 d-flex flex-column",
+                           
+                           # Details
+                           tags$div(
+                             class = "mt-auto p-4",
+                             tags$h3("Doctor Name"),
+                             tags$h6(
+                               class = "fw-normal fst-italic text-primary mb-4",
+                               "Cardiology Specialist"
+                             ),
+                             tags$p(class = "m-0", "Dolor lorem eos dolor duo eirmod sea. Dolor sit magna rebum clita rebum dolor")
+                           ),
+                           
+                           # Social Links
+                           tags$div(
+                             class = "d-flex mt-auto border-top p-4",
+                             tags$a(
+                               class = "btn btn-lg btn-primary btn-lg-square rounded-circle me-3",
+                               href = "#",
+                               tags$i(class = "fab fa-twitter")
+                             ),
+                             tags$a(
+                               class = "btn btn-lg btn-primary btn-lg-square rounded-circle me-3",
+                               href = "#",
+                               tags$i(class = "fab fa-facebook-f")
+                             ),
+                             tags$a(
+                               class = "btn btn-lg btn-primary btn-lg-square rounded-circle",
+                               href = "#",
+                               tags$i(class = "fab fa-linkedin-in")
+                             )
+                           )
+                         )
+                       )
+                     ),
+                     
+                     # Additional team members can be copied here with the same structure
+                   )
+                 )
+               ),
+             
              
            ),
            "about" = div(
@@ -815,6 +1121,16 @@ server <- function(input, output, session) {
   
   observe({
     print(input$page)
+  })
+  
+  session$onFlushed(function() {
+    runjs('$(".owl-carousel").owlCarousel({
+      items: 1,
+      loop: true,
+      autoplay: true,
+      autoplayTimeout: 3000,
+      autoplayHoverPause: true
+    });')
   })
   
   
